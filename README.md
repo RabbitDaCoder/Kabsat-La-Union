@@ -5,6 +5,7 @@ A full-stack resort reservation system for Kabsat La Union, a surf resort in La 
 ## Features
 
 ### Guest Features
+
 - Browse available rooms and accommodations
 - View room details with images, amenities, and pricing
 - Real-time availability checking with date picker
@@ -13,6 +14,7 @@ A full-stack resort reservation system for Kabsat La Union, a surf resort in La 
 - PDF receipt generation and download
 
 ### Admin Features
+
 - Secure admin authentication (JWT-based)
 - Dashboard with booking statistics
 - Manage rooms (add, edit, delete)
@@ -22,6 +24,7 @@ A full-stack resort reservation system for Kabsat La Union, a surf resort in La 
 ## Tech Stack
 
 ### Frontend
+
 - **React 19** with Vite
 - **React Router** for navigation
 - **Zustand** for state management
@@ -32,6 +35,7 @@ A full-stack resort reservation system for Kabsat La Union, a surf resort in La 
 - **jsPDF** & **html2canvas** for PDF generation
 
 ### Backend
+
 - **Node.js** with Express
 - **MongoDB** with Mongoose ODM
 - **JWT** for authentication
@@ -66,6 +70,7 @@ A full-stack resort reservation system for Kabsat La Union, a surf resort in La 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - MongoDB (local or Atlas)
 - Gmail account (for email notifications)
@@ -73,19 +78,22 @@ A full-stack resort reservation system for Kabsat La Union, a surf resort in La 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/RabbitDaCoder/Kabsat-La-Union.git
    cd Kabsat-La-Union
    ```
 
 2. **Backend Setup**
+
    ```bash
    cd backend
    npm install
    cp .env.example .env
    ```
-   
+
    Edit `.env` with your configuration:
+
    ```env
    PORT=5000
    NODE_ENV=development
@@ -100,13 +108,15 @@ A full-stack resort reservation system for Kabsat La Union, a surf resort in La 
    ```
 
 3. **Frontend Setup**
+
    ```bash
    cd frontend
    npm install
    cp .env.example .env
    ```
-   
+
    Edit `.env`:
+
    ```env
    VITE_API_URL=http://localhost:5000/api
    ```
@@ -139,54 +149,60 @@ npm run dev
 ## API Endpoints
 
 ### Public
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/rooms` | Get all rooms |
-| GET | `/api/rooms/:id` | Get room by ID |
-| GET | `/api/rooms/:id/availability` | Check room availability |
-| POST | `/api/bookings` | Create new booking |
-| GET | `/api/bookings/:id` | Get booking by ID |
-| GET | `/api/health` | Health check |
+
+| Method | Endpoint                      | Description             |
+| ------ | ----------------------------- | ----------------------- |
+| GET    | `/api/rooms`                  | Get all rooms           |
+| GET    | `/api/rooms/:id`              | Get room by ID          |
+| GET    | `/api/rooms/:id/availability` | Check room availability |
+| POST   | `/api/bookings`               | Create new booking      |
+| GET    | `/api/bookings/:id`           | Get booking by ID       |
+| GET    | `/api/health`                 | Health check            |
 
 ### Admin (Protected)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Admin login |
-| GET | `/api/admin/dashboard` | Dashboard stats |
-| GET | `/api/admin/bookings` | All bookings |
-| PATCH | `/api/admin/bookings/:id` | Update booking |
-| POST | `/api/admin/rooms` | Create room |
-| PUT | `/api/admin/rooms/:id` | Update room |
-| DELETE | `/api/admin/rooms/:id` | Delete room |
+
+| Method | Endpoint                  | Description     |
+| ------ | ------------------------- | --------------- |
+| POST   | `/api/auth/login`         | Admin login     |
+| GET    | `/api/admin/dashboard`    | Dashboard stats |
+| GET    | `/api/admin/bookings`     | All bookings    |
+| PATCH  | `/api/admin/bookings/:id` | Update booking  |
+| POST   | `/api/admin/rooms`        | Create room     |
+| PUT    | `/api/admin/rooms/:id`    | Update room     |
+| DELETE | `/api/admin/rooms/:id`    | Delete room     |
 
 ## Deployment
 
 ### Backend (Render)
+
 The backend is configured for Render deployment via `render.yaml`. Set environment variables in the Render dashboard.
 
 ### Frontend (Vercel)
+
 The frontend is configured for Vercel deployment via `vercel.json`. Set `VITE_API_URL` to your production backend URL.
 
 ## Environment Variables
 
 ### Backend
-| Variable | Description |
-|----------|-------------|
-| `PORT` | Server port (default: 5000) |
-| `NODE_ENV` | Environment (development/production) |
-| `MONGODB_URI` | MongoDB connection string |
-| `JWT_SECRET` | Secret key for JWT tokens |
-| `EMAIL_HOST` | SMTP host |
-| `EMAIL_PORT` | SMTP port |
-| `EMAIL_USER` | SMTP username |
-| `EMAIL_PASS` | SMTP password/app password |
-| `EMAIL_FROM` | Sender email address |
-| `FRONTEND_URL` | Frontend URL for CORS |
+
+| Variable       | Description                          |
+| -------------- | ------------------------------------ |
+| `PORT`         | Server port (default: 5000)          |
+| `NODE_ENV`     | Environment (development/production) |
+| `MONGODB_URI`  | MongoDB connection string            |
+| `JWT_SECRET`   | Secret key for JWT tokens            |
+| `EMAIL_HOST`   | SMTP host                            |
+| `EMAIL_PORT`   | SMTP port                            |
+| `EMAIL_USER`   | SMTP username                        |
+| `EMAIL_PASS`   | SMTP password/app password           |
+| `EMAIL_FROM`   | Sender email address                 |
+| `FRONTEND_URL` | Frontend URL for CORS                |
 
 ### Frontend
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_URL` | Backend API URL |
+
+| Variable           | Description            |
+| ------------------ | ---------------------- |
+| `VITE_API_URL`     | Backend API URL        |
 | `VITE_WEBSITE_URL` | Production website URL |
 
 ## License
