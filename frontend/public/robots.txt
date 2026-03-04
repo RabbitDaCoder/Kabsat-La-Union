@@ -1,0 +1,12 @@
+# Robots.txt for Kabsat La Union
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://kabsatlaunion.com/sitemap.xml
+
+# Disallow admin pages
+Disallow: /owner
+Disallow: /owner/*
+Disallow: /admin
+Disallow: /admin/*

@@ -1,0 +1,21 @@
+{
+  "name": "Kabsat La Union",
+  "short_name": "Kabsat",
+  "description": "Surf and beach resort in San Juan, La Union, Philippines",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f7f9",
+  "theme_color": "#0f3d4a",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
