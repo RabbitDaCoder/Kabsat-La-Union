@@ -45,7 +45,7 @@ export const roomService = {
 
 /**
  * Admin room API service
- * Handles admin room management
+ * Handles admin room management with image upload support
  */
 export const adminRoomService = {
   /**
@@ -58,23 +58,84 @@ export const adminRoomService = {
   },
 
   /**
-   * Create new room
+   * Create new room with image upload support
    * @param {Object} roomData - Room data
+   * @param {File[]} imageFiles - Array of image files to upload
+   * @param {string[]} imageUrls - Array of image URLs to add
    * @returns {Promise} Created room
    */
-  createRoom: async (roomData) => {
-    const response = await api.post("/admin/rooms", roomData);
+  createRoom: async (roomData, imageFiles = [], imageUrls = []) => {
+    const formData = new FormData();
+
+    // Add room data fields
+    Object.keys(roomData).forEach((key) => {
+      if (key !== "images") {
+        const value = roomData[key];
+        if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, value);
+        }
+      }
+    });
+
+    // Add image files
+    imageFiles.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    // Add image URLs
+    if (imageUrls.length > 0) {
+      formData.append("imageUrls", JSON.stringify(imageUrls));
+    }
+
+    const response = await api.post("/admin/rooms", formData);
     return response.data;
   },
 
   /**
-   * Update room
+   * Update room with image upload support
    * @param {string} id - Room ID
    * @param {Object} roomData - Updated room data
+   * @param {File[]} imageFiles - Array of new image files to upload
+   * @param {string[]} imageUrls - Array of image URLs (existing + new)
+   * @param {boolean} appendImages - Whether to append or replace images
    * @returns {Promise} Updated room
    */
-  updateRoom: async (id, roomData) => {
-    const response = await api.put(`/admin/rooms/${id}`, roomData);
+  updateRoom: async (
+    id,
+    roomData,
+    imageFiles = [],
+    imageUrls = [],
+    appendImages = false,
+  ) => {
+    const formData = new FormData();
+
+    // Add room data fields
+    Object.keys(roomData).forEach((key) => {
+      if (key !== "images") {
+        const value = roomData[key];
+        if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, value);
+        }
+      }
+    });
+
+    // Add image files
+    imageFiles.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    // Add image URLs (existing + pasted)
+    if (imageUrls.length > 0) {
+      formData.append("imageUrls", JSON.stringify(imageUrls));
+    }
+
+    formData.append("appendImages", appendImages.toString());
+
+    const response = await api.put(`/admin/rooms/${id}`, formData);
     return response.data;
   },
 

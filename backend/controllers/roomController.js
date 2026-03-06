@@ -69,7 +69,46 @@ export const getRoomById = asyncHandler(async (req, res) => {
  * @access  Admin
  */
 export const createRoom = asyncHandler(async (req, res) => {
-  const room = await Room.create(req.body);
+  const roomData = { ...req.body };
+
+  // Handle images from upload middleware
+  if (req.processedImageUrls && req.processedImageUrls.length > 0) {
+    roomData.images = req.processedImageUrls;
+    roomData.featuredImage = req.processedImageUrls[0];
+  }
+
+  // Parse numeric fields from FormData (they come as strings)
+  if (roomData.basePrice) roomData.basePrice = parseFloat(roomData.basePrice);
+  if (roomData.price) roomData.price = parseFloat(roomData.price);
+  if (roomData.totalRooms)
+    roomData.totalRooms = parseInt(roomData.totalRooms, 10);
+  if (roomData.maxGuests) roomData.maxGuests = parseInt(roomData.maxGuests, 10);
+  if (roomData.includedGuests)
+    roomData.includedGuests = parseInt(roomData.includedGuests, 10);
+  if (roomData.extraGuestPrice)
+    roomData.extraGuestPrice = parseFloat(roomData.extraGuestPrice);
+
+  // Parse amenities from JSON string
+  if (typeof roomData.amenities === "string") {
+    try {
+      roomData.amenities = JSON.parse(roomData.amenities);
+    } catch {
+      roomData.amenities = roomData.amenities
+        .split(",")
+        .map((a) => a.trim())
+        .filter(Boolean);
+    }
+  }
+
+  // Sync price/basePrice
+  if (roomData.basePrice && !roomData.price)
+    roomData.price = roomData.basePrice;
+  else if (roomData.price && !roomData.basePrice)
+    roomData.basePrice = roomData.price;
+
+  if (!roomData.images) roomData.images = [];
+
+  const room = await Room.create(roomData);
 
   res.status(201).json({
     success: true,
@@ -84,7 +123,61 @@ export const createRoom = asyncHandler(async (req, res) => {
  * @access  Admin
  */
 export const updateRoom = asyncHandler(async (req, res) => {
-  const room = await Room.findByIdAndUpdate(req.params.id, req.body, {
+  const roomData = { ...req.body };
+
+  // Handle images from upload middleware
+  if (req.processedImageUrls && req.processedImageUrls.length > 0) {
+    const appendImages =
+      roomData.appendImages === "true" || roomData.appendImages === true;
+
+    if (appendImages) {
+      // Get existing room to append images
+      const existingRoom = await Room.findById(req.params.id);
+      if (existingRoom) {
+        roomData.images = [
+          ...(existingRoom.images || []),
+          ...req.processedImageUrls,
+        ];
+      } else {
+        roomData.images = req.processedImageUrls;
+      }
+    } else {
+      roomData.images = req.processedImageUrls;
+    }
+
+    // Update featured image if it's the first image
+    if (roomData.images.length > 0) {
+      roomData.featuredImage = roomData.images[0];
+    }
+  }
+
+  // Parse numeric fields from FormData (they come as strings)
+  if (roomData.basePrice) roomData.basePrice = parseFloat(roomData.basePrice);
+  if (roomData.price) roomData.price = parseFloat(roomData.price);
+  if (roomData.totalRooms)
+    roomData.totalRooms = parseInt(roomData.totalRooms, 10);
+  if (roomData.maxGuests) roomData.maxGuests = parseInt(roomData.maxGuests, 10);
+  if (roomData.includedGuests)
+    roomData.includedGuests = parseInt(roomData.includedGuests, 10);
+  if (roomData.extraGuestPrice)
+    roomData.extraGuestPrice = parseFloat(roomData.extraGuestPrice);
+
+  // Parse amenities from JSON string
+  if (typeof roomData.amenities === "string") {
+    try {
+      roomData.amenities = JSON.parse(roomData.amenities);
+    } catch {
+      roomData.amenities = roomData.amenities
+        .split(",")
+        .map((a) => a.trim())
+        .filter(Boolean);
+    }
+  }
+
+  // Clean up appendImages field
+  delete roomData.appendImages;
+
+  const room = await Room.findByIdAndUpdate(req.params.id, roomData, {
     new: true,
     runValidators: true,
   });

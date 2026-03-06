@@ -1,5 +1,14 @@
-import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Percent } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Percent,
+  Upload,
+  Link,
+  X,
+  Image,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +40,221 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { adminRoomService } from "@/services";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
+
+/**
+ * ImageUploader Component
+ * Handles drag & drop, file browse, and URL paste for images
+ */
+function ImageUploader({
+  existingImages = [],
+  onExistingImagesChange,
+  newFiles = [],
+  onNewFilesChange,
+  pastedUrls = [],
+  onPastedUrlsChange,
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      const files = Array.from(e.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
+
+      if (files.length > 0) {
+        onNewFilesChange([...newFiles, ...files]);
+      }
+    },
+    [newFiles, onNewFilesChange],
+  );
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files).filter((file) =>
+      file.type.startsWith("image/"),
+    );
+
+    if (files.length > 0) {
+      onNewFilesChange([...newFiles, ...files]);
+    }
+  };
+
+  const handleAddUrl = () => {
+    if (!urlInput.trim()) return;
+
+    try {
+      new URL(urlInput);
+      onPastedUrlsChange([...pastedUrls, urlInput.trim()]);
+      setUrlInput("");
+    } catch {
+      toast.error("Please enter a valid URL");
+    }
+  };
+
+  const removeExistingImage = (index) => {
+    const updated = existingImages.filter((_, i) => i !== index);
+    onExistingImagesChange(updated);
+  };
+
+  const removeNewFile = (index) => {
+    const updated = newFiles.filter((_, i) => i !== index);
+    onNewFilesChange(updated);
+  };
+
+  const removePastedUrl = (index) => {
+    const updated = pastedUrls.filter((_, i) => i !== index);
+    onPastedUrlsChange(updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Drag & Drop Zone */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={cn(
+          "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+          isDragging
+            ? "border-ocean-500 bg-ocean-50"
+            : "border-ocean-200 hover:border-ocean-300",
+        )}
+      >
+        <Upload className="h-8 w-8 mx-auto mb-2 text-ocean-400" />
+        <p className="text-sm text-ocean-600 mb-2">
+          Drag & drop images here, or{" "}
+          <label className="text-ocean-700 font-medium cursor-pointer hover:underline">
+            browse
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </label>
+        </p>
+        <p className="text-xs text-ocean-400">
+          JPEG, PNG, GIF, WebP up to 5MB each
+        </p>
+      </div>
+
+      {/* URL Input */}
+      <div className="flex gap-2">
+        <div className="flex-1 relative">
+          <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ocean-400" />
+          <Input
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAddUrl()}
+            placeholder="Paste image URL..."
+            className="pl-9"
+          />
+        </div>
+        <Button type="button" onClick={handleAddUrl} variant="outline">
+          Add URL
+        </Button>
+      </div>
+
+      {/* Image Preview Grid */}
+      {(existingImages.length > 0 ||
+        newFiles.length > 0 ||
+        pastedUrls.length > 0) && (
+        <div className="space-y-2">
+          <Label>
+            Images (
+            {existingImages.length + newFiles.length + pastedUrls.length})
+          </Label>
+          <div className="grid grid-cols-4 gap-2">
+            {/* Existing Images */}
+            {existingImages.map((url, index) => (
+              <div key={`existing-${index}`} className="relative group">
+                <img
+                  src={url}
+                  alt={`Existing ${index + 1}`}
+                  className="w-full h-20 object-cover rounded border"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/150?text=Error";
+                  }}
+                />
+                <Badge className="absolute top-1 left-1 text-xs px-1 py-0">
+                  Current
+                </Badge>
+                <button
+                  type="button"
+                  onClick={() => removeExistingImage(index)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+
+            {/* New Files */}
+            {newFiles.map((file, index) => (
+              <div key={`new-${index}`} className="relative group">
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt={`New ${index + 1}`}
+                  className="w-full h-20 object-cover rounded border border-green-300"
+                />
+                <Badge className="absolute top-1 left-1 text-xs px-1 py-0 bg-green-500">
+                  New
+                </Badge>
+                <button
+                  type="button"
+                  onClick={() => removeNewFile(index)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+
+            {/* Pasted URLs */}
+            {pastedUrls.map((url, index) => (
+              <div key={`url-${index}`} className="relative group">
+                <img
+                  src={url}
+                  alt={`URL ${index + 1}`}
+                  className="w-full h-20 object-cover rounded border border-blue-300"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://via.placeholder.com/150?text=Invalid";
+                  }}
+                />
+                <Badge className="absolute top-1 left-1 text-xs px-1 py-0 bg-blue-500">
+                  URL
+                </Badge>
+                <button
+                  type="button"
+                  onClick={() => removePastedUrl(index)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * Admin Rooms Management page
@@ -49,9 +272,13 @@ export function AdminRoomsPage() {
     price: "",
     totalRooms: "1",
     maxGuests: "2",
-    images: "",
+    includedGuests: "2",
+    extraGuestPrice: "0",
     amenities: "",
   });
+  const [editExistingImages, setEditExistingImages] = useState([]);
+  const [editNewFiles, setEditNewFiles] = useState([]);
+  const [editPastedUrls, setEditPastedUrls] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [discountData, setDiscountData] = useState({
     isActive: false,
@@ -69,9 +296,12 @@ export function AdminRoomsPage() {
     price: "",
     totalRooms: "1",
     maxGuests: "2",
-    images: "",
+    includedGuests: "2",
+    extraGuestPrice: "0",
     amenities: "",
   });
+  const [newRoomFiles, setNewRoomFiles] = useState([]);
+  const [newRoomUrls, setNewRoomUrls] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
@@ -96,6 +326,11 @@ export function AdminRoomsPage() {
       return;
     }
 
+    if (newRoomFiles.length === 0 && newRoomUrls.length === 0) {
+      toast.error("Please add at least one image");
+      return;
+    }
+
     setIsCreating(true);
     try {
       const roomData = {
@@ -103,36 +338,46 @@ export function AdminRoomsPage() {
         description: newRoom.description,
         category: newRoom.category,
         price: parseFloat(newRoom.price),
+        basePrice: parseFloat(newRoom.price),
         totalRooms: parseInt(newRoom.totalRooms) || 1,
         maxGuests: parseInt(newRoom.maxGuests) || 2,
-        images: newRoom.images
-          ? newRoom.images.split(",").map((url) => url.trim())
-          : [],
+        includedGuests: parseInt(newRoom.includedGuests) || 2,
+        extraGuestPrice: parseFloat(newRoom.extraGuestPrice) || 0,
         amenities: newRoom.amenities
-          ? newRoom.amenities.split(",").map((a) => a.trim())
+          ? newRoom.amenities
+              .split(",")
+              .map((a) => a.trim())
+              .filter(Boolean)
           : [],
       };
 
-      await adminRoomService.createRoom(roomData);
+      await adminRoomService.createRoom(roomData, newRoomFiles, newRoomUrls);
       toast.success("Room created successfully");
       fetchRooms();
       setShowAddDialog(false);
-      setNewRoom({
-        name: "",
-        description: "",
-        category: "standard",
-        price: "",
-        totalRooms: "1",
-        maxGuests: "2",
-        images: "",
-        amenities: "",
-      });
+      resetNewRoomForm();
     } catch (error) {
       console.error("Failed to create room:", error);
-      toast.error("Failed to create room");
+      toast.error(error.message || "Failed to create room");
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const resetNewRoomForm = () => {
+    setNewRoom({
+      name: "",
+      description: "",
+      category: "standard",
+      price: "",
+      totalRooms: "1",
+      maxGuests: "2",
+      includedGuests: "2",
+      extraGuestPrice: "0",
+      amenities: "",
+    });
+    setNewRoomFiles([]);
+    setNewRoomUrls([]);
   };
 
   const handleDeleteRoom = async (roomId) => {
@@ -158,6 +403,13 @@ export function AdminRoomsPage() {
       return;
     }
 
+    const totalImages =
+      editExistingImages.length + editNewFiles.length + editPastedUrls.length;
+    if (totalImages === 0) {
+      toast.error("Please add at least one image");
+      return;
+    }
+
     setIsUpdating(true);
     try {
       const roomData = {
@@ -165,14 +417,11 @@ export function AdminRoomsPage() {
         description: editData.description,
         category: editData.category,
         price: parseFloat(editData.price),
+        basePrice: parseFloat(editData.price),
         totalRooms: parseInt(editData.totalRooms) || 1,
         maxGuests: parseInt(editData.maxGuests) || 2,
-        images: editData.images
-          ? editData.images
-              .split(",")
-              .map((url) => url.trim())
-              .filter(Boolean)
-          : [],
+        includedGuests: parseInt(editData.includedGuests) || 2,
+        extraGuestPrice: parseFloat(editData.extraGuestPrice) || 0,
         amenities: editData.amenities
           ? editData.amenities
               .split(",")
@@ -181,13 +430,24 @@ export function AdminRoomsPage() {
           : [],
       };
 
-      await adminRoomService.updateRoom(editRoom._id, roomData);
+      // Combine existing images with new pasted URLs
+      const allImageUrls = [...editExistingImages, ...editPastedUrls];
+
+      await adminRoomService.updateRoom(
+        editRoom._id,
+        roomData,
+        editNewFiles,
+        allImageUrls,
+        false, // Replace all images
+      );
+
       toast.success("Room updated successfully");
       fetchRooms();
       setShowEditDialog(false);
       setEditRoom(null);
-    } catch {
-      toast.error("Failed to update room");
+    } catch (error) {
+      console.error("Failed to update room:", error);
+      toast.error(error.message || "Failed to update room");
     } finally {
       setIsUpdating(false);
     }
@@ -220,9 +480,13 @@ export function AdminRoomsPage() {
       price: room.price?.toString() || "",
       totalRooms: room.totalRooms?.toString() || "1",
       maxGuests: room.maxGuests?.toString() || "2",
-      images: room.images?.join(", ") || "",
+      includedGuests: room.includedGuests?.toString() || "2",
+      extraGuestPrice: room.extraGuestPrice?.toString() || "0",
       amenities: room.amenities?.join(", ") || "",
     });
+    setEditExistingImages(room.images || []);
+    setEditNewFiles([]);
+    setEditPastedUrls([]);
     setShowEditDialog(true);
   };
 
@@ -245,7 +509,13 @@ export function AdminRoomsPage() {
           </h1>
           <p className="text-ocean-600">Manage room pricing and discounts</p>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <Dialog
+          open={showAddDialog}
+          onOpenChange={(open) => {
+            setShowAddDialog(open);
+            if (!open) resetNewRoomForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -343,19 +613,52 @@ export function AdminRoomsPage() {
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="room-included">Included Guests</Label>
+                  <Input
+                    id="room-included"
+                    type="number"
+                    value={newRoom.includedGuests}
+                    onChange={(e) =>
+                      setNewRoom({ ...newRoom, includedGuests: e.target.value })
+                    }
+                    placeholder="2"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="room-extra">Extra Guest Price</Label>
+                  <Input
+                    id="room-extra"
+                    type="number"
+                    value={newRoom.extraGuestPrice}
+                    onChange={(e) =>
+                      setNewRoom({
+                        ...newRoom,
+                        extraGuestPrice: e.target.value,
+                      })
+                    }
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Image Upload Section */}
               <div className="space-y-2">
-                <Label htmlFor="room-images">
-                  Image URLs (comma separated)
+                <Label className="flex items-center gap-2">
+                  <Image className="h-4 w-4" />
+                  Room Images *
                 </Label>
-                <Input
-                  id="room-images"
-                  value={newRoom.images}
-                  onChange={(e) =>
-                    setNewRoom({ ...newRoom, images: e.target.value })
-                  }
-                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                <ImageUploader
+                  existingImages={[]}
+                  onExistingImagesChange={() => {}}
+                  newFiles={newRoomFiles}
+                  onNewFilesChange={setNewRoomFiles}
+                  pastedUrls={newRoomUrls}
+                  onPastedUrlsChange={setNewRoomUrls}
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="room-amenities">
                   Amenities (comma separated)
@@ -481,37 +784,52 @@ export function AdminRoomsPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-room-images">
-                Image URLs (comma separated)
-              </Label>
-              <Input
-                id="edit-room-images"
-                value={editData.images}
-                onChange={(e) =>
-                  setEditData({ ...editData, images: e.target.value })
-                }
-                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-              />
-              {editData.images && (
-                <div className="flex gap-2 mt-2 flex-wrap">
-                  {editData.images
-                    .split(",")
-                    .map(
-                      (url, idx) =>
-                        url.trim() && (
-                          <img
-                            key={idx}
-                            src={url.trim()}
-                            alt={`Preview ${idx + 1}`}
-                            className="w-16 h-16 object-cover rounded border"
-                            onError={(e) => (e.target.style.display = "none")}
-                          />
-                        ),
-                    )}
-                </div>
-              )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-room-included">Included Guests</Label>
+                <Input
+                  id="edit-room-included"
+                  type="number"
+                  value={editData.includedGuests}
+                  onChange={(e) =>
+                    setEditData({ ...editData, includedGuests: e.target.value })
+                  }
+                  placeholder="2"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-room-extra">Extra Guest Price</Label>
+                <Input
+                  id="edit-room-extra"
+                  type="number"
+                  value={editData.extraGuestPrice}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      extraGuestPrice: e.target.value,
+                    })
+                  }
+                  placeholder="0"
+                />
+              </div>
             </div>
+
+            {/* Image Upload Section */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Room Images *
+              </Label>
+              <ImageUploader
+                existingImages={editExistingImages}
+                onExistingImagesChange={setEditExistingImages}
+                newFiles={editNewFiles}
+                onNewFilesChange={setEditNewFiles}
+                pastedUrls={editPastedUrls}
+                onPastedUrlsChange={setEditPastedUrls}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="edit-room-amenities">
                 Amenities (comma separated)

@@ -18,10 +18,28 @@ const roomSchema = new mongoose.Schema(
       trim: true,
       maxlength: [2000, "Description cannot exceed 2000 characters"],
     },
+    basePrice: {
+      type: Number,
+      min: [0, "Price cannot be negative"],
+    },
     price: {
       type: Number,
-      required: [true, "Price per night is required"],
       min: [0, "Price cannot be negative"],
+    },
+    currency: {
+      type: String,
+      default: "PHP",
+      enum: ["PHP", "USD"],
+    },
+    includedGuests: {
+      type: Number,
+      default: 2,
+      min: [1, "Must include at least 1 guest"],
+    },
+    extraGuestPrice: {
+      type: Number,
+      default: 0,
+      min: [0, "Extra guest price cannot be negative"],
     },
     seasonalDiscount: {
       isActive: {
@@ -41,14 +59,12 @@ const roomSchema = new mongoose.Schema(
         type: Date,
       },
     },
+    featuredImage: {
+      type: String, // First image for room cards
+    },
     images: {
-      type: [String],
-      validate: {
-        validator: function (v) {
-          return v && v.length > 0;
-        },
-        message: "At least one image is required",
-      },
+      type: [String], // Array of Cloudinary URLs
+      default: [],
     },
     totalRooms: {
       type: Number,
@@ -116,6 +132,26 @@ roomSchema.virtual("hasActiveDiscount").get(function () {
   const endDate = this.seasonalDiscount.endDate;
 
   return startDate && endDate && now >= startDate && now <= endDate;
+});
+
+/**
+ * Pre-save hook: sync price/basePrice and set featuredImage
+ */
+roomSchema.pre("save", function (next) {
+  // Set featuredImage from first image if not set
+  if (this.images?.length > 0 && !this.featuredImage) {
+    this.featuredImage = this.images[0];
+  }
+
+  // Sync price and basePrice
+  if (this.basePrice && !this.price) {
+    this.price = this.basePrice;
+  }
+  if (this.price && !this.basePrice) {
+    this.basePrice = this.price;
+  }
+
+  next();
 });
 
 // Indexes for efficient querying
